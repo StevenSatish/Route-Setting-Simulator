@@ -9,6 +9,8 @@ Your overall goal for this project is to create 3d route setting software. There
 3. Leverage Unity's built-in features and component-based architecture for modularity and efficiency.
 4. Implement robust error handling, logging, and debugging practices.
 5. Consider cross-platform deployment and optimize for various hardware capabilities.
+6. Utilize SerializeField for all fields that can be edited in the inspector.
+7. Assume that Unity is updated to the latest version and that all new features can be used.
 
 ## Code Style and Conventions
 - Use PascalCase for public members, camelCase for private members.
