@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class RoomGenerator : MonoBehaviour
 {
@@ -10,12 +13,14 @@ public class RoomGenerator : MonoBehaviour
     
     [Header("Materials")]
     [SerializeField] private Material m_FloorMaterial;
-    [SerializeField] private Material m_WallMaterial;
     [SerializeField] private Material m_CeilingMaterial;
+    [SerializeField] private Material m_WallMaterial;
     
-    [Header("Lighting")]
-    [SerializeField] private Color m_AmbientColor = new Color(0.5f, 0.5f, 0.5f, 1f);
-    [SerializeField] private float m_AmbientIntensity = 1f;
+    [Header("References")]
+    [SerializeField] private GameObject m_Floor;
+    [SerializeField] private GameObject m_Ceiling;
+    [SerializeField] private GameObject m_LeftWall;
+    [SerializeField] private GameObject m_RightWall;
     #endregion
 
     #region Unity Lifecycle
@@ -25,39 +30,46 @@ public class RoomGenerator : MonoBehaviour
     }
     #endregion
 
-    #region Private Methods
-    private void GenerateRoom()
+    #region Public Methods
+    public void GenerateRoom()
     {
+        CleanupExistingWalls();
+        
         // Floor
-        CreateWall(new Vector3(0, 0, 0), 
-                  new Vector3(m_RoomWidth, 0.1f, m_RoomDepth), 
-                  "Floor", 
-                  m_FloorMaterial);
+        m_Floor = CreateWall(new Vector3(0, 0, 0), 
+                           new Vector3(m_RoomWidth, 0.1f, m_RoomDepth), 
+                           "Floor", 
+                           m_FloorMaterial);
         
         // Ceiling
-        CreateWall(new Vector3(0, m_RoomHeight, 0), 
-                  new Vector3(m_RoomWidth, 0.1f, m_RoomDepth), 
-                  "Ceiling", 
-                  m_CeilingMaterial);
-        
-        // Back wall (climbing wall)
-        CreateWall(new Vector3(0, m_RoomHeight/2, -m_RoomDepth/2), 
-                  new Vector3(m_RoomWidth, m_RoomHeight, 0.1f), 
-                  "BackWall", 
-                  m_WallMaterial);
+        m_Ceiling = CreateWall(new Vector3(0, m_RoomHeight, 0), 
+                             new Vector3(m_RoomWidth, 0.1f, m_RoomDepth), 
+                             "Ceiling", 
+                             m_CeilingMaterial);
         
         // Side walls
-        CreateWall(new Vector3(-m_RoomWidth/2, m_RoomHeight/2, 0), 
-                  new Vector3(0.1f, m_RoomHeight, m_RoomDepth), 
-                  "LeftWall", 
-                  m_WallMaterial);
-        CreateWall(new Vector3(m_RoomWidth/2, m_RoomHeight/2, 0), 
-                  new Vector3(0.1f, m_RoomHeight, m_RoomDepth), 
-                  "RightWall", 
-                  m_WallMaterial);
+        m_LeftWall = CreateWall(new Vector3(-m_RoomWidth/2, m_RoomHeight/2, 0), 
+                              new Vector3(0.1f, m_RoomHeight, m_RoomDepth), 
+                              "LeftWall", 
+                              m_WallMaterial);
+        
+        m_RightWall = CreateWall(new Vector3(m_RoomWidth/2, m_RoomHeight/2, 0), 
+                               new Vector3(0.1f, m_RoomHeight, m_RoomDepth), 
+                               "RightWall", 
+                               m_WallMaterial);
+    }
+    #endregion
+
+    #region Private Methods
+    private void CleanupExistingWalls()
+    {
+        if (m_Floor != null) DestroyImmediate(m_Floor);
+        if (m_Ceiling != null) DestroyImmediate(m_Ceiling);
+        if (m_LeftWall != null) DestroyImmediate(m_LeftWall);
+        if (m_RightWall != null) DestroyImmediate(m_RightWall);
     }
 
-    private void CreateWall(Vector3 _position, Vector3 _scale, string _name, Material _material)
+    private GameObject CreateWall(Vector3 _position, Vector3 _scale, string _name, Material _material)
     {
         GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
         wall.name = _name;
@@ -69,6 +81,26 @@ public class RoomGenerator : MonoBehaviour
         {
             wall.GetComponent<Renderer>().material = _material;
         }
+
+        return wall;
     }
     #endregion
+
+    #if UNITY_EDITOR
+    [CustomEditor(typeof(RoomGenerator))]
+    public class RoomGeneratorEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            DrawDefaultInspector();
+
+            RoomGenerator generator = (RoomGenerator)target;
+
+            if (GUILayout.Button("Generate Room"))
+            {
+                generator.GenerateRoom();
+            }
+        }
+    }
+    #endif
 }

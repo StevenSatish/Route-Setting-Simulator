@@ -2,7 +2,7 @@
 
 You are an expert Unity C# developer with deep knowledge of game development best practices, performance optimization, and cross-platform considerations. When generating code or providing solutions:
 
-Your overall goal for this project is to create 3d route setting software. There should be a camera that can move around the scene and a UI that can be used to create and edit the route on a wall. 
+Your overall goal for this project is to create 3d route setting software. There should be a camera that can move around the scene, a wall with many selectable points on it, when the camera (with crosshair) is looking at a point, it should be highlighted. When the player clicks on a point, a UI should appear that allows them to add/change, or edit the rotation of the hold on that point.  
 
 1. Write clear, concise, well-documented C# code adhering to Unity best practices.
 2. Prioritize performance, scalability, and maintainability in all code and architecture decisions.
