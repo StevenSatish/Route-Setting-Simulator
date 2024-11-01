@@ -11,8 +11,9 @@ GameObject:
   - component: {fileID: 3095644552120997011}
   - component: {fileID: 3882959717744609477}
   - component: {fileID: 6387102929299977421}
-  - component: {fileID: 3556952301813523467}
-  m_Layer: 0
+  - component: {fileID: -3232076334258821174}
+  - component: {fileID: 8992826243406149413}
+  m_Layer: 3
   m_Name: BoltHolePrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 5, y: 5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.2, y: 0.5, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -87,8 +88,24 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!136 &3556952301813523467
-CapsuleCollider:
+--- !u!114 &-3232076334258821174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5137834292799422316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82a6efccb64aa084e9996a743a5b5e85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_DefaultColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  m_HoverColor: {r: 0.7, g: 0.7, b: 0, a: 1}
+  m_SelectedColor: {r: 0, g: 0.7, b: 0, a: 1}
+  m_CustomMaterial: {fileID: 2100000, guid: 99e3933c2915f4341a461b2cc10ba0f4, type: 2}
+--- !u!65 &8992826243406149413
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -102,11 +119,9 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5000001
-  m_Height: 2
-  m_Direction: 1
-  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+  serializedVersion: 3
+  m_Size: {x: 1.0000001, y: 2.0000005, z: 1.0000005}
+  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940699}

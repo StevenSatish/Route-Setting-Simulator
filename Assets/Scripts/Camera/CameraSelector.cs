@@ -46,8 +46,8 @@ public class CameraSelector : MonoBehaviour
                 m_CurrentHoveredObject.OnHoverEnter();
             }
 
-            // Handle click
-            if (Input.GetMouseButtonDown(0))
+            // Handle 'E' key press instead of mouse click
+            if (Input.GetKeyDown(KeyCode.E))
             {
                 m_CurrentHoveredObject.OnSelect();
             }
