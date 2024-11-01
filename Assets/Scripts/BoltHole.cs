@@ -1,6 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 
 [RequireComponent(typeof(MeshRenderer))]
 public class BoltHole : MonoBehaviour, ISelectable
@@ -14,73 +12,33 @@ public class BoltHole : MonoBehaviour, ISelectable
     [SerializeField] private Material m_CustomMaterial;
     
     private MeshRenderer m_Renderer;
+    private HoldGalleryUI m_GalleryUI;
     private Material m_Material;
     private Color m_DefaultColor;
     private bool m_IsSelected;
     private bool m_IsHovered;
-
-    [Header("UI References")]
-[SerializeField] private GameObject m_HoldSelectorPrefab;
-private RectTransform m_UIParent;  // Remove SerializeField since we're finding it at runtime
-    
-    private GameObject m_ActiveHoldSelector;
-    private GameObject[] m_ClimbingHoldPrefabs;
     #endregion
 
     #region Unity Lifecycle
     private void Awake()
     {
-        // Find the main UI canvas by name using the new method
-        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
-        Canvas targetCanvas = null;
-        
-        foreach (Canvas canvas in canvases)
-        {
-            if (canvas.name == "MainUICanvas") // Change this to match your canvas name
-            {
-                targetCanvas = canvas;
-                break;
-            }
-        }
-
-        if (targetCanvas != null)
-        {
-            // Find or create the HoldSelectorParent
-            Transform parent = targetCanvas.transform.Find("HoldSelectorParent");
-            if (parent == null)
-            {
-                GameObject holderObj = new GameObject("HoldSelectorParent");
-                holderObj.transform.SetParent(targetCanvas.transform, false);
-                parent = holderObj.transform;
-            }
-            m_UIParent = parent.GetComponent<RectTransform>();
-        }
-        else
-        {
-            Debug.LogError("MainUICanvas not found in scene!");
-        }
-
         InitializeMaterial();
-        LoadClimbingHoldPrefabs();
+    }
+    private void Start()
+{
+        m_GalleryUI = FindFirstObjectByType<HoldGalleryUI>();
     }
 
     private void OnEnable()
     {
-        // Ensure material is initialized when object is enabled
         if (m_Material == null)
         {
             InitializeMaterial();
         }
     }
 
-    private void OnDisable()
-    {
-        HideHoldSelector();
-    }
-
     private void OnDestroy()
     {
-        // Clean up the material instance
         if (m_Material != null)
         {
             if (Application.isPlaying)
@@ -94,49 +52,8 @@ private RectTransform m_UIParent;  // Remove SerializeField since we're finding 
         }
     }
 
-    private void Update()
-    {
-        if (m_IsSelected && Input.GetKeyDown(KeyCode.Escape))
-        {
-            m_IsSelected = false;
-            UpdateVisualState();
-            HideHoldSelector();
-        }
-    }
-
-    private void LoadClimbingHoldPrefabs()
-    {
-        // Load all prefabs from Resources folder
-        m_ClimbingHoldPrefabs = Resources.LoadAll<GameObject>("ClimbingHolds");
-        if (m_ClimbingHoldPrefabs == null || m_ClimbingHoldPrefabs.Length == 0)
-        {
-        Debug.LogWarning("No climbing hold prefabs found in Resources/ClimbingHolds folder!");
-    }
-    }
-
-    private void InitializeMaterial()
-    {
-        m_Renderer = GetComponent<MeshRenderer>();
-        if (m_Renderer == null) return;
-
-        // Create material instance
-        Material sourceMaterial = m_CustomMaterial != null ? m_CustomMaterial : m_Renderer.sharedMaterial;
-        if (sourceMaterial == null) return;
-
-        // Create new material instance and store default color
-        m_Material = new Material(sourceMaterial);
-        m_DefaultColor = sourceMaterial.color;
-
-        // Assign the material
-        m_Renderer.material = m_Material;
-        
-        // Force initial visual state
-        UpdateVisualState();
-    }
-
     private void OnValidate()
     {
-        // Ensure material updates in editor
         if (m_Material != null)
         {
             UpdateVisualState();
@@ -161,19 +78,30 @@ private RectTransform m_UIParent;  // Remove SerializeField since we're finding 
     {
         m_IsSelected = !m_IsSelected;
         UpdateVisualState();
-        
         if (m_IsSelected)
-        {
-            ShowHoldSelector();
-        }
+            m_GalleryUI?.Show();
         else
-        {
-            HideHoldSelector();
-        }
+            m_GalleryUI?.Hide();
     }
     #endregion
 
     #region Private Methods
+    private void InitializeMaterial()
+    {
+        m_Renderer = GetComponent<MeshRenderer>();
+        if (m_Renderer == null) return;
+
+        Material sourceMaterial = m_CustomMaterial != null ? m_CustomMaterial : m_Renderer.sharedMaterial;
+        if (sourceMaterial == null) return;
+
+        m_Material = new Material(sourceMaterial);
+        m_DefaultColor = sourceMaterial.color;
+
+        m_Renderer.material = m_Material;
+        
+        UpdateVisualState();
+    }
+
     private void UpdateVisualState()
     {
         if (m_Material == null || m_Renderer == null)
@@ -182,7 +110,6 @@ private RectTransform m_UIParent;  // Remove SerializeField since we're finding 
             if (m_Material == null) return;
         }
 
-        // Ensure material is still assigned
         if (m_Renderer.material != m_Material)
         {
             m_Renderer.material = m_Material;
@@ -200,65 +127,7 @@ private RectTransform m_UIParent;  // Remove SerializeField since we're finding 
         }
         
         m_Material.color = targetColor;
-        
-        // Force material update
         m_Renderer.material.color = targetColor;
-    }
-
-    private void ShowHoldSelector()
-    {
-        if (m_ActiveHoldSelector != null) return;
-        
-        if (m_HoldSelectorPrefab == null)
-        {
-            Debug.LogError("Hold Selector Prefab not assigned!");
-            return;
-        }
-
-        // Instantiate the UI
-        m_ActiveHoldSelector = Instantiate(m_HoldSelectorPrefab, m_UIParent);
-        
-        // Get references to UI components
-        var content = m_ActiveHoldSelector.GetComponentInChildren<ContentSizeFitter>().transform;
-        var itemPrefab = Resources.Load<GameObject>("UI/HoldSelectorItem");
-        if (itemPrefab == null)
-        {
-            Debug.LogError("HoldSelectorItem prefab not found in Resources/UI folder!");
-            return;
-        }
-
-
-        // Populate the scroll view
-        foreach (var holdPrefab in m_ClimbingHoldPrefabs)
-        {
-            var item = Instantiate(itemPrefab, content);
-            var previewImage = item.GetComponentInChildren<Image>();
-            var text = item.GetComponentInChildren<TextMeshProUGUI>();
-
-            if (text != null)
-            {
-                text.text = holdPrefab.name;
-            }
-
-            if (previewImage != null)
-            {
-                string previewPath = holdPrefab.name + "_preview";
-                Sprite previewSprite = Resources.Load<Sprite>("HoldPreviews/" + previewPath);
-                if (previewSprite != null)
-                {
-                    previewImage.sprite = previewSprite;
-                }
-            }
-        }
-    }
-
-    private void HideHoldSelector()
-    {
-        if (m_ActiveHoldSelector != null)
-        {
-            Destroy(m_ActiveHoldSelector);
-            m_ActiveHoldSelector = null;
-        }
     }
     #endregion
 } 
