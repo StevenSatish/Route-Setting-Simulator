@@ -20,8 +20,8 @@ public class BoltHole : MonoBehaviour, ISelectable
     private bool m_IsHovered;
 
     [Header("UI References")]
-    [SerializeField] private GameObject m_HoldSelectorPrefab;
-    private RectTransform m_UIParent;
+[SerializeField] private GameObject m_HoldSelectorPrefab;
+private RectTransform m_UIParent;  // Remove SerializeField since we're finding it at runtime
     
     private GameObject m_ActiveHoldSelector;
     private GameObject[] m_ClimbingHoldPrefabs;
@@ -64,12 +64,6 @@ public class BoltHole : MonoBehaviour, ISelectable
         LoadClimbingHoldPrefabs();
     }
 
-    private void LoadClimbingHoldPrefabs()
-    {
-        // Load all prefabs from Resources folder
-        m_ClimbingHoldPrefabs = Resources.LoadAll<GameObject>("ClimbingHolds");
-    }
-
     private void OnEnable()
     {
         // Ensure material is initialized when object is enabled
@@ -77,6 +71,47 @@ public class BoltHole : MonoBehaviour, ISelectable
         {
             InitializeMaterial();
         }
+    }
+
+    private void OnDisable()
+    {
+        HideHoldSelector();
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up the material instance
+        if (m_Material != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(m_Material);
+            }
+            else
+            {
+                DestroyImmediate(m_Material);
+            }
+        }
+    }
+
+    private void Update()
+    {
+        if (m_IsSelected && Input.GetKeyDown(KeyCode.Escape))
+        {
+            m_IsSelected = false;
+            UpdateVisualState();
+            HideHoldSelector();
+        }
+    }
+
+    private void LoadClimbingHoldPrefabs()
+    {
+        // Load all prefabs from Resources folder
+        m_ClimbingHoldPrefabs = Resources.LoadAll<GameObject>("ClimbingHolds");
+        if (m_ClimbingHoldPrefabs == null || m_ClimbingHoldPrefabs.Length == 0)
+        {
+        Debug.LogWarning("No climbing hold prefabs found in Resources/ClimbingHolds folder!");
+    }
     }
 
     private void InitializeMaterial()
@@ -97,22 +132,6 @@ public class BoltHole : MonoBehaviour, ISelectable
         
         // Force initial visual state
         UpdateVisualState();
-    }
-
-    private void OnDestroy()
-    {
-        // Clean up the material instance
-        if (m_Material != null)
-        {
-            if (Application.isPlaying)
-            {
-                Destroy(m_Material);
-            }
-            else
-            {
-                DestroyImmediate(m_Material);
-            }
-        }
     }
 
     private void OnValidate()
@@ -190,22 +209,45 @@ public class BoltHole : MonoBehaviour, ISelectable
     {
         if (m_ActiveHoldSelector != null) return;
         
+        if (m_HoldSelectorPrefab == null)
+        {
+            Debug.LogError("Hold Selector Prefab not assigned!");
+            return;
+        }
+
         // Instantiate the UI
         m_ActiveHoldSelector = Instantiate(m_HoldSelectorPrefab, m_UIParent);
         
         // Get references to UI components
         var content = m_ActiveHoldSelector.GetComponentInChildren<ContentSizeFitter>().transform;
         var itemPrefab = Resources.Load<GameObject>("UI/HoldSelectorItem");
-        
+        if (itemPrefab == null)
+        {
+            Debug.LogError("HoldSelectorItem prefab not found in Resources/UI folder!");
+            return;
+        }
+
+
         // Populate the scroll view
         foreach (var holdPrefab in m_ClimbingHoldPrefabs)
         {
-            Debug.Log($"Hold prefab: {holdPrefab.name}");
             var item = Instantiate(itemPrefab, content);
+            var previewImage = item.GetComponentInChildren<Image>();
             var text = item.GetComponentInChildren<TextMeshProUGUI>();
+
             if (text != null)
             {
                 text.text = holdPrefab.name;
+            }
+
+            if (previewImage != null)
+            {
+                string previewPath = holdPrefab.name + "_preview";
+                Sprite previewSprite = Resources.Load<Sprite>("HoldPreviews/" + previewPath);
+                if (previewSprite != null)
+                {
+                    previewImage.sprite = previewSprite;
+                }
             }
         }
     }
