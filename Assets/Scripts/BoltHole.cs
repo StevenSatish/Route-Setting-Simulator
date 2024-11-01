@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 [RequireComponent(typeof(MeshRenderer))]
 public class BoltHole : MonoBehaviour, ISelectable
@@ -16,12 +18,56 @@ public class BoltHole : MonoBehaviour, ISelectable
     private Color m_DefaultColor;
     private bool m_IsSelected;
     private bool m_IsHovered;
+
+    [Header("UI References")]
+    [SerializeField] private GameObject m_HoldSelectorPrefab;
+    private RectTransform m_UIParent;
+    
+    private GameObject m_ActiveHoldSelector;
+    private GameObject[] m_ClimbingHoldPrefabs;
     #endregion
 
     #region Unity Lifecycle
     private void Awake()
     {
+        // Find the main UI canvas by name using the new method
+        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        Canvas targetCanvas = null;
+        
+        foreach (Canvas canvas in canvases)
+        {
+            if (canvas.name == "MainUICanvas") // Change this to match your canvas name
+            {
+                targetCanvas = canvas;
+                break;
+            }
+        }
+
+        if (targetCanvas != null)
+        {
+            // Find or create the HoldSelectorParent
+            Transform parent = targetCanvas.transform.Find("HoldSelectorParent");
+            if (parent == null)
+            {
+                GameObject holderObj = new GameObject("HoldSelectorParent");
+                holderObj.transform.SetParent(targetCanvas.transform, false);
+                parent = holderObj.transform;
+            }
+            m_UIParent = parent.GetComponent<RectTransform>();
+        }
+        else
+        {
+            Debug.LogError("MainUICanvas not found in scene!");
+        }
+
         InitializeMaterial();
+        LoadClimbingHoldPrefabs();
+    }
+
+    private void LoadClimbingHoldPrefabs()
+    {
+        // Load all prefabs from Resources folder
+        m_ClimbingHoldPrefabs = Resources.LoadAll<GameObject>("ClimbingHolds");
     }
 
     private void OnEnable()
@@ -97,7 +143,14 @@ public class BoltHole : MonoBehaviour, ISelectable
         m_IsSelected = !m_IsSelected;
         UpdateVisualState();
         
-        Debug.Log($"Bolt hole {gameObject.name} {(m_IsSelected ? "selected" : "deselected")}!");
+        if (m_IsSelected)
+        {
+            ShowHoldSelector();
+        }
+        else
+        {
+            HideHoldSelector();
+        }
     }
     #endregion
 
@@ -131,6 +184,39 @@ public class BoltHole : MonoBehaviour, ISelectable
         
         // Force material update
         m_Renderer.material.color = targetColor;
+    }
+
+    private void ShowHoldSelector()
+    {
+        if (m_ActiveHoldSelector != null) return;
+        
+        // Instantiate the UI
+        m_ActiveHoldSelector = Instantiate(m_HoldSelectorPrefab, m_UIParent);
+        
+        // Get references to UI components
+        var content = m_ActiveHoldSelector.GetComponentInChildren<ContentSizeFitter>().transform;
+        var itemPrefab = Resources.Load<GameObject>("UI/HoldSelectorItem");
+        
+        // Populate the scroll view
+        foreach (var holdPrefab in m_ClimbingHoldPrefabs)
+        {
+            Debug.Log($"Hold prefab: {holdPrefab.name}");
+            var item = Instantiate(itemPrefab, content);
+            var text = item.GetComponentInChildren<TextMeshProUGUI>();
+            if (text != null)
+            {
+                text.text = holdPrefab.name;
+            }
+        }
+    }
+
+    private void HideHoldSelector()
+    {
+        if (m_ActiveHoldSelector != null)
+        {
+            Destroy(m_ActiveHoldSelector);
+            m_ActiveHoldSelector = null;
+        }
     }
     #endregion
 } 

@@ -100,10 +100,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82a6efccb64aa084e9996a743a5b5e85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DefaultColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
   m_HoverColor: {r: 0.7, g: 0.7, b: 0, a: 1}
   m_SelectedColor: {r: 0, g: 0.7, b: 0, a: 1}
   m_CustomMaterial: {fileID: 2100000, guid: 99e3933c2915f4341a461b2cc10ba0f4, type: 2}
+  m_HoldSelectorPrefab: {fileID: 4871295525741415384, guid: bfb012c688034f447bb9ee5d1e8c32ca, type: 3}
+  m_UIParent: {fileID: 0}
 --- !u!65 &8992826243406149413
 BoxCollider:
   m_ObjectHideFlags: 0
