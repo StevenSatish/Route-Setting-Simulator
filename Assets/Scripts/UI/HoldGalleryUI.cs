@@ -119,16 +119,23 @@ public class HoldGalleryUI : MonoBehaviour
     #endregion
 
     #region Public Methods
+    public static bool IsVisible { get; private set; }
+
     public void Show()
     {
         gameObject.SetActive(true);
         isGalleryVisible = true;
+        IsVisible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void Hide()
     {
         gameObject.SetActive(false);
         isGalleryVisible = false;
+        IsVisible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     public void Toggle()

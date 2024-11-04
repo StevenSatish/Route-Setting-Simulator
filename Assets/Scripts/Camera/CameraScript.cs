@@ -44,12 +44,26 @@ public class CameraScript : MonoBehaviour
 
     private void Update()
     {
-        HandleRotation();
+        if (!HoldGalleryUI.IsVisible)
+        {
+            HandleRotation();
+        }
     }
 
     private void FixedUpdate()
     {
-        HandleMovement();
+        if (!HoldGalleryUI.IsVisible)
+        {
+            HandleMovement();
+        }
+        else
+        {
+            // Reset velocity when gallery is visible
+            if (m_Rigidbody != null)
+            {
+                m_Rigidbody.linearVelocity = Vector3.zero;
+            }
+        }
     }
     #endregion
 
