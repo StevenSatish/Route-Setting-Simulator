@@ -1,22 +1,120 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class HoldGalleryUI : MonoBehaviour
 {
     #region Private Fields
-    [SerializeField] private Transform m_ContentParent;
-    [SerializeField] private GameObject m_HoldItemPrefab;
-    [SerializeField] private float m_ItemSize = 100f;
-    [SerializeField] private float m_Spacing = 10f;
-    private bool m_IsVisible;
+    [SerializeField] private Transform holdGridContainer;          // Container with GridLayoutGroup that holds all the holds
+    [SerializeField] private GameObject holdItemPrefab;
+    [SerializeField] private Color selectedHoldColor = Color.green;
+    [SerializeField] private ScrollRect galleryScrollRect;
+    [SerializeField] private float scrollSmoothingSpeed = 10f;
+    private bool isGalleryVisible;
+    private HoldItemUI selectedHoldItem;
+    private float targetScrollPosition;
+    private List<HoldItemUI> holdItems = new List<HoldItemUI>();
     #endregion
+
+    public class HoldItemUI
+    {
+        public GameObject gameObject;
+        public Image backgroundImage;
+        public string previewName;
+        public Vector2Int gridPosition;  // For WASD navigation
+
+        public HoldItemUI(GameObject _obj, string _name, Vector2Int _pos)
+        {
+            gameObject = _obj;
+            backgroundImage = _obj.transform.Find("Background")?.GetComponent<Image>();
+            previewName = _name;
+            gridPosition = _pos;
+        }
+    }
 
     #region Unity Lifecycle
     private void Start()
     {
+        targetScrollPosition = 1f; // Start at top
         LoadPreviews();
-        Hide(); // Start hidden
+        Show();
+    }
+
+    private void Update()
+    {
+        if (!isGalleryVisible) return;
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Hide();
+            return;
+        }
+
+        Vector2Int moveDirection = Vector2Int.zero;
+        
+        if (Input.GetKeyDown(KeyCode.W)) moveDirection.y = -1;
+        if (Input.GetKeyDown(KeyCode.S)) moveDirection.y = 1;
+        if (Input.GetKeyDown(KeyCode.A)) moveDirection.x = -1;
+        if (Input.GetKeyDown(KeyCode.D)) moveDirection.x = 1;
+
+        if (moveDirection != Vector2Int.zero && selectedHoldItem != null)
+        {
+            Vector2Int newPosition = selectedHoldItem.gridPosition + moveDirection;
+            HoldItemUI nextItem = holdItems.Find(item => item.gridPosition == newPosition);
+            
+            if (nextItem != null)
+            {
+                SelectHoldItem(nextItem);
+                Canvas.ForceUpdateCanvases();
+                ScrollRectToItem(nextItem.gameObject);
+            }
+        }
+
+        // Handle smooth scrolling
+        if (galleryScrollRect != null)
+        {
+            float currentScroll = galleryScrollRect.verticalNormalizedPosition;
+            float newPosition = Mathf.Lerp(currentScroll, targetScrollPosition, Time.deltaTime * scrollSmoothingSpeed);
+            galleryScrollRect.verticalNormalizedPosition = newPosition;
+        }
+        else
+        {
+            Debug.LogError("ScrollRect is null!");
+        }
+    }
+
+    private void ScrollRectToItem(GameObject _item)
+    {
+        if (galleryScrollRect == null) return;
+
+        RectTransform viewportRect = galleryScrollRect.viewport;
+        RectTransform contentRect = holdGridContainer as RectTransform;
+        RectTransform itemRect = _item.transform as RectTransform;
+
+        Canvas.ForceUpdateCanvases();
+        Vector3[] itemCorners = new Vector3[4];
+        Vector3[] viewportCorners = new Vector3[4];
+        itemRect.GetWorldCorners(itemCorners);
+        viewportRect.GetWorldCorners(viewportCorners);
+
+        float itemTop = itemCorners[1].y;
+        float itemBottom = itemCorners[0].y;
+        float viewportTop = viewportCorners[1].y;
+        float viewportBottom = viewportCorners[0].y;
+
+        float scrollDelta = 0;
+        
+        if (itemTop > viewportTop)
+        {
+            scrollDelta = (itemTop - viewportTop) / (contentRect.rect.height - viewportRect.rect.height);
+            targetScrollPosition = Mathf.Clamp01(galleryScrollRect.verticalNormalizedPosition + scrollDelta);
+        }
+        else if (itemBottom < viewportBottom)
+        {
+            scrollDelta = (itemBottom - viewportBottom) / (contentRect.rect.height - viewportRect.rect.height);
+            targetScrollPosition = Mathf.Clamp01(galleryScrollRect.verticalNormalizedPosition + scrollDelta);
+        }
     }
     #endregion
 
@@ -24,46 +122,112 @@ public class HoldGalleryUI : MonoBehaviour
     public void Show()
     {
         gameObject.SetActive(true);
-        m_IsVisible = true;
+        isGalleryVisible = true;
     }
 
     public void Hide()
     {
         gameObject.SetActive(false);
-        m_IsVisible = false;
+        isGalleryVisible = false;
     }
 
     public void Toggle()
     {
-        if (m_IsVisible)
+        if (isGalleryVisible)
             Hide();
         else
             Show();
+    }
+
+    public void SelectHoldItem(HoldItemUI _item)
+    {
+        // Deselect previous
+        if (selectedHoldItem != null)
+        {
+            selectedHoldItem.backgroundImage.color = Color.black;
+        }
+
+        // Select new
+        selectedHoldItem = _item;
+        if (selectedHoldItem != null)
+        {
+            selectedHoldItem.backgroundImage.color = selectedHoldColor;
+        }
     }
     #endregion
 
     #region Private Methods
     private void LoadPreviews()
     {
-        // Load all preview sprites
         Sprite[] previews = Resources.LoadAll<Sprite>("HoldPreviews");
+        Debug.Log($"Found {previews.Length} preview sprites");
 
-        foreach (Sprite preview in previews)
+        // Calculate grid dimensions based on GridLayoutGroup
+        var grid = holdGridContainer.GetComponent<GridLayoutGroup>();
+        int columnsCount = grid.constraintCount;
+
+        for (int i = 0; i < previews.Length; i++)
         {
-            GameObject item = Instantiate(m_HoldItemPrefab, m_ContentParent);
+            Sprite preview = previews[i];
+            GameObject item = Instantiate(holdItemPrefab, holdGridContainer);
+
+            // Calculate grid position
+            Vector2Int gridPos = new Vector2Int(i % columnsCount, i / columnsCount);
             
-            // Set image
-            if (item.TryGetComponent<Image>(out var image))
+            // Create HoldItemUI and add to list
+            var holdItem = new HoldItemUI(item, preview.name, gridPos);
+            holdItems.Add(holdItem);
+
+            // Set up preview image and label as before
+            Transform previewImageTransform = item.transform.Find("PreviewImage");
+            if (previewImageTransform != null)
             {
-                image.sprite = preview;
+                var image = previewImageTransform.GetComponent<Image>();
+                if (image != null)
+                {
+                    image.sprite = preview;
+                    image.preserveAspect = true;
+                    
+                    var rectTransform = image.rectTransform;
+                    rectTransform.anchorMin = new Vector2(0, 0);
+                    rectTransform.anchorMax = new Vector2(1, 1);
+                    rectTransform.offsetMin = new Vector2(2, 22);
+                    rectTransform.offsetMax = new Vector2(-2, -2);
+                    
+                    image.color = Color.white;
+                }
             }
 
-            // Set label
-            if (item.GetComponentInChildren<TextMeshProUGUI>() is TextMeshProUGUI label)
+            Transform labelTransform = item.transform.Find("Label");
+            if (labelTransform != null)
             {
-                label.text = preview.name.Replace("_preview", "");
+                var label = labelTransform.GetComponent<TextMeshProUGUI>();
+                if (label != null)
+                {
+                    label.text = preview.name.Replace("_preview", "");
+                    label.color = Color.white;
+                }
             }
         }
+
+        // Select first item by default
+        if (holdItems.Count > 0)
+        {
+            SelectHoldItem(holdItems[0]);
+        }
+    }
+
+    // Helper method to debug hierarchy
+    private string GetHierarchyPath(GameObject obj)
+    {
+        string path = obj.name;
+        Transform parent = obj.transform.parent;
+        while (parent != null)
+        {
+            path = parent.name + "/" + path;
+            parent = parent.parent;
+        }
+        return path;
     }
     #endregion
 } 

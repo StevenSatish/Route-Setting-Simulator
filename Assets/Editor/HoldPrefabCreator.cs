@@ -8,7 +8,7 @@ public class HoldPrefabCreator : EditorWindow
     private string m_SourceFolder = "Assets/Models/Holds";
     private string m_TargetFolder = "Assets/Resources/ClimbingHolds";
     private string m_PreviewFolder = "Assets/Resources/HoldPreviews";
-    private int m_PreviewSize = 256;
+    private int m_PreviewSize = 128;
 
     [MenuItem("Tools/Convert Holds to Prefabs")]
     public static void ShowWindow()
@@ -95,15 +95,16 @@ public class HoldPrefabCreator : EditorWindow
             Bounds bounds = renderer.bounds;
             float maxDim = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
             
-            // Set orthographic size (half the height of the view)
-            _camera.orthographicSize = maxDim * 0.5f;  // Adjust multiplier as needed
-            
-            // Position camera
-            _camera.transform.position = Vector3.down * 10f;  // Distance doesn't affect size in orthographic
+            // Adjust camera to frame object more tightly
+            _camera.orthographicSize = maxDim * 0.6f;  // Tighter framing
+            _camera.transform.position = Vector3.down * 10f;
         }
 
-        // Create render texture
-        RenderTexture rt = new RenderTexture(m_PreviewSize, m_PreviewSize, 24);
+        // Create square render texture
+        RenderTexture rt = new RenderTexture(m_PreviewSize, m_PreviewSize, 24)
+        {
+            antiAliasing = 8  // Add anti-aliasing for cleaner preview
+        };
         _camera.targetTexture = rt;
         
         // Render to texture
@@ -118,20 +119,51 @@ public class HoldPrefabCreator : EditorWindow
         // Save to file
         byte[] bytes = tex.EncodeToPNG();
         File.WriteAllBytes(_savePath, bytes);
-        
         // Cleanup
         RenderTexture.active = null;
         _camera.targetTexture = null;
         DestroyImmediate(rt);
         DestroyImmediate(tex);
 
-        // Import asset
+        // Import asset with specific settings
         AssetDatabase.ImportAsset(_savePath);
         TextureImporter importer = AssetImporter.GetAtPath(_savePath) as TextureImporter;
         if (importer != null)
         {
             importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.filterMode = FilterMode.Bilinear;
+            
+            // Set max size to match preview size
+            TextureImporterPlatformSettings platformSettings = new TextureImporterPlatformSettings
+            {
+                maxTextureSize = m_PreviewSize,
+                format = TextureImporterFormat.RGBA32,  // Use RGBA32 for better quality
+                textureCompression = TextureImporterCompression.Uncompressed,  // No compression for UI
+                crunchedCompression = false
+            };
+            importer.SetPlatformTextureSettings(platformSettings);
+
+            // Optimize sprite settings for UI
+            TextureImporterSettings texSettings = new TextureImporterSettings();
+            importer.ReadTextureSettings(texSettings);
+            texSettings.spriteMeshType = SpriteMeshType.FullRect;
+            texSettings.spriteExtrude = 1;
+            texSettings.spritePixelsPerUnit = 100;
+            texSettings.spriteAlignment = (int)SpriteAlignment.Center;  // Center pivot
+            importer.SetTextureSettings(texSettings);
+
+            // Apply and reimport
+            EditorUtility.SetDirty(importer);
             importer.SaveAndReimport();
+            
+            Debug.Log($"Successfully imported {_savePath} as Sprite");
+        }
+        else
+        {
+            Debug.LogError($"Failed to set import settings for {_savePath}");
         }
     }
 }
