@@ -6,7 +6,8 @@ using System.Collections.Generic;
 public class HoldGalleryUI : MonoBehaviour
 {
     #region Private Fields
-    [SerializeField] private Transform holdGridContainer;          // Container with GridLayoutGroup that holds all the holds
+    public static HoldGalleryUI Instance { get; private set; }
+    [SerializeField] private Transform holdGridContainer;// Container with GridLayoutGroup that holds all the holds
     [SerializeField] private GameObject holdItemPrefab;
     [SerializeField] private Color selectedHoldColor = Color.green;
     [SerializeField] private ScrollRect galleryScrollRect;
@@ -15,6 +16,7 @@ public class HoldGalleryUI : MonoBehaviour
     private HoldItemUI selectedHoldItem;
     private float targetScrollPosition;
     private List<HoldItemUI> holdItems = new List<HoldItemUI>();
+    private string curBoltHoldName = "";
     #endregion
 
     public class HoldItemUI
@@ -34,11 +36,16 @@ public class HoldGalleryUI : MonoBehaviour
     }
 
     #region Unity Lifecycle
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     private void Start()
     {
         targetScrollPosition = 1f; // Start at top
         LoadPreviews();
-        Show();
+        Hide();
     }
 
     private void Update()
@@ -121,12 +128,22 @@ public class HoldGalleryUI : MonoBehaviour
     #region Public Methods
     public static bool IsVisible { get; private set; }
 
-    public void Show()
-    {
+    public void Show(string _curBoltHoldName)
+    {        
+        if (holdGridContainer == null)
+        {
+            Debug.LogError("Hold grid container is null!");
+            return;
+        }
+        
         gameObject.SetActive(true);
         isGalleryVisible = true;
         IsVisible = true;
         Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        curBoltHoldName = _curBoltHoldName;
+        
+        Debug.Log($"current hold name: {curBoltHoldName} | items count: {holdItems.Count}");
     }
 
     public void Hide()
@@ -136,14 +153,6 @@ public class HoldGalleryUI : MonoBehaviour
         IsVisible = false;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-    }
-
-    public void Toggle()
-    {
-        if (isGalleryVisible)
-            Hide();
-        else
-            Show();
     }
 
     public void SelectHoldItem(HoldItemUI _item)

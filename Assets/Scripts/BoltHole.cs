@@ -5,9 +5,7 @@ public class BoltHole : MonoBehaviour, ISelectable
 {
     #region Private Fields
     [Header("Colors")]
-    [SerializeField] private Color m_HoverColor = new Color(0.7f, 0.7f, 0.0f);
-    [SerializeField] private Color m_SelectedColor = new Color(0.0f, 0.7f, 0.0f);
-    
+    [SerializeField] private Color m_HoverColor = new Color(0.7f, 0.7f, 0.0f);    
     [Header("References")]
     [SerializeField] private Material m_CustomMaterial;
     
@@ -15,7 +13,6 @@ public class BoltHole : MonoBehaviour, ISelectable
     private HoldGalleryUI m_GalleryUI;
     private Material m_Material;
     private Color m_DefaultColor;
-    private bool m_IsSelected;
     private bool m_IsHovered;
     #endregion
 
@@ -25,8 +22,12 @@ public class BoltHole : MonoBehaviour, ISelectable
         InitializeMaterial();
     }
     private void Start()
-{
-        m_GalleryUI = FindFirstObjectByType<HoldGalleryUI>();
+    {
+        m_GalleryUI = HoldGalleryUI.Instance;
+        if (m_GalleryUI == null)
+        {
+            Debug.LogError($"Could not find HoldGalleryUI in scene!");
+        }
     }
 
     private void OnEnable()
@@ -76,12 +77,13 @@ public class BoltHole : MonoBehaviour, ISelectable
 
     public void OnSelect()
     {
-        m_IsSelected = !m_IsSelected;
-        UpdateVisualState();
-        if (m_IsSelected)
-            m_GalleryUI?.Show();
-        else
-            m_GalleryUI?.Hide();
+        if (m_GalleryUI == null)
+        {
+            Debug.LogError($"GalleryUI is null on BoltHole: {gameObject.name}");
+            return;
+        }
+        // Just show the UI with the bolt hole name
+        m_GalleryUI.Show(gameObject.name);
     }
     #endregion
 
@@ -117,11 +119,7 @@ public class BoltHole : MonoBehaviour, ISelectable
 
         Color targetColor = m_DefaultColor;
         
-        if (m_IsSelected)
-        {
-            targetColor = m_SelectedColor;
-        }
-        else if (m_IsHovered)
+        if (m_IsHovered)
         {
             targetColor = m_HoverColor;
         }

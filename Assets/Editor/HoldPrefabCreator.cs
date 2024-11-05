@@ -64,8 +64,10 @@ public class HoldPrefabCreator : EditorWindow
             // Generate preview
             string previewPath = Path.Combine(m_PreviewFolder, fbxModel.name + "_preview.png");
             GeneratePreview(instance, previewCamera, previewPath);
+        
+            // Set scale before creating prefab
+            instance.transform.localScale = new Vector3(0.007f, 0.007f, 0.007f);
 
-            // Create prefab
             string prefabPath = Path.Combine(m_TargetFolder, fbxModel.name + ".prefab");
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
             
