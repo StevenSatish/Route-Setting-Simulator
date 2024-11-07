@@ -139,14 +139,56 @@ public class HoldGalleryUI : MonoBehaviour
     {
         if (selectedHoldItem == null) return;
 
+        GameObject boltHole = GameObject.Find(curBoltHoldName);
+        if (boltHole == null)
+        {
+            Debug.LogError($"Could not find bolt hole: {curBoltHoldName}");
+            return;
+        }
+
         string prefabPath = $"ClimbingHolds/{selectedHoldItem.previewName.Replace("_preview", "")}";
         GameObject holdPrefab = Resources.Load<GameObject>(prefabPath);
         
         if (holdPrefab != null)
         {
-            // Spawn with explicit rotation
-            Instantiate(holdPrefab, new Vector3(0, 2f, 0), Quaternion.Euler(0, 180, 0));
-            Debug.Log($"Spawned hold: {selectedHoldItem.previewName}");
+            float wallZ = boltHole.transform.parent.position.z;
+            float wallThickness = 2f; // Wall thickness
+            float wallFrontZ = wallZ - (wallThickness / 2f); // Calculate front face Z position
+            
+            MeshFilter meshFilter = holdPrefab.GetComponentInChildren<MeshFilter>();
+            
+            if (meshFilter != null)
+            {
+                // Get all vertices and find the minimum Z value (will become max after rotation)
+                Vector3[] vertices = meshFilter.sharedMesh.vertices;
+                float minZ = float.MaxValue;
+                
+                foreach (Vector3 vertex in vertices)
+                {
+                    if (vertex.z < minZ)
+                    {
+                        minZ = vertex.z;
+                    }
+                }
+                
+                // Account for scale
+                float scaledZ = minZ * 0.007f;
+                
+                // Create spawn position with the back face exactly at the wall
+                Vector3 spawnPosition = new Vector3(
+                    boltHole.transform.position.x,
+                    boltHole.transform.position.y,
+                    wallFrontZ + scaledZ - 0.01f // Add scaledZ since we're using the minimum Z value
+                );
+                
+                Instantiate(holdPrefab, spawnPosition, Quaternion.Euler(0, 180, 0));
+                Debug.Log($"wallZ: {wallZ} | scaledZ: {scaledZ}");
+                Debug.Log($"Spawned hold: {selectedHoldItem.previewName} with back face at Z: {wallZ + scaledZ}");
+            }
+            else
+            {
+                Debug.LogError($"No MeshFilter found on hold prefab: {prefabPath}");
+            }
         }
         else
         {
