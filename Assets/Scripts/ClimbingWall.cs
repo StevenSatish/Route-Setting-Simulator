@@ -9,6 +9,7 @@ public class ClimbingWall : MonoBehaviour
     [Header("Grid Settings")]
     [SerializeField] private Vector2Int m_GridSize = new Vector2Int(20, 30);
     [SerializeField] private float m_Padding = 1f;
+    [SerializeField] private float m_BoltHoleDepth = 0.12f;
     
     [Header("References")]
     [SerializeField] private GameObject m_BoltHolePrefab;
@@ -59,7 +60,7 @@ public class ClimbingWall : MonoBehaviour
                 Vector3 position = transform.position + new Vector3(
                     startX + (x * spacingX),
                     startY + (y * spacingY),
-                    -wallThickness / 2f
+                    (-wallThickness / 2f) + m_BoltHoleDepth
                 );
                 
                 CreateBoltHole(position, x, y);

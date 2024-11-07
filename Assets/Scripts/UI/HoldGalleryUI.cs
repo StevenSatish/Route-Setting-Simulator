@@ -58,6 +58,17 @@ public class HoldGalleryUI : MonoBehaviour
             return;
         }
 
+        // Add Enter key check
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            if (selectedHoldItem != null)
+            {
+                SpawnSelectedHold();
+                Hide();
+                return;
+            }
+        }
+
         Vector2Int moveDirection = Vector2Int.zero;
         
         if (Input.GetKeyDown(KeyCode.W)) moveDirection.y = -1;
@@ -121,6 +132,25 @@ public class HoldGalleryUI : MonoBehaviour
         {
             scrollDelta = (itemBottom - viewportBottom) / (contentRect.rect.height - viewportRect.rect.height);
             targetScrollPosition = Mathf.Clamp01(galleryScrollRect.verticalNormalizedPosition + scrollDelta);
+        }
+    }
+
+    private void SpawnSelectedHold()
+    {
+        if (selectedHoldItem == null) return;
+
+        string prefabPath = $"ClimbingHolds/{selectedHoldItem.previewName.Replace("_preview", "")}";
+        GameObject holdPrefab = Resources.Load<GameObject>(prefabPath);
+        
+        if (holdPrefab != null)
+        {
+            // Spawn with explicit rotation
+            Instantiate(holdPrefab, new Vector3(0, 2f, 0), Quaternion.Euler(0, 180, 0));
+            Debug.Log($"Spawned hold: {selectedHoldItem.previewName}");
+        }
+        else
+        {
+            Debug.LogError($"Could not find hold prefab at path: {prefabPath}");
         }
     }
     #endregion
