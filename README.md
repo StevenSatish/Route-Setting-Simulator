@@ -4,9 +4,11 @@ A 3D climbing wall route setting application built with Unity.
 
 ## Installation
 
-1. Download the latest release from the Releases page
-2. Extract the zip file
-3. Run the executable file
+## Download and Play
+1. Go to the [Releases](https://github.com/StevenSatish/Route-Setting-Simulator/releases) page
+2. Download the latest version for your platform
+3. Extract the zip file
+4. Run RouteSettingSoftware.exe
 
 ## Controls
 
