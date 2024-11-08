@@ -9,6 +9,7 @@ public class HoldPrefabCreator : EditorWindow
     private string m_TargetFolder = "Assets/Resources/ClimbingHolds";
     private string m_PreviewFolder = "Assets/Resources/HoldPreviews";
     private int m_PreviewSize = 128;
+    private Color m_HoldColor = new Color(0.8f, 0.8f, 0.8f, 1f); // Light gray, fully opaque
 
     [MenuItem("Tools/Convert Holds to Prefabs")]
     public static void ShowWindow()
@@ -22,6 +23,7 @@ public class HoldPrefabCreator : EditorWindow
         m_TargetFolder = EditorGUILayout.TextField("Target Folder:", m_TargetFolder);
         m_PreviewFolder = EditorGUILayout.TextField("Preview Folder:", m_PreviewFolder);
         m_PreviewSize = EditorGUILayout.IntField("Preview Size:", m_PreviewSize);
+        m_HoldColor = EditorGUILayout.ColorField("Hold Color:", m_HoldColor);
 
         if (GUILayout.Button("Convert All Holds"))
         {
@@ -60,6 +62,11 @@ public class HoldPrefabCreator : EditorWindow
                 instance.AddComponent<MeshCollider>();
             if (!instance.GetComponent<ClimbingHold>())
                 instance.AddComponent<ClimbingHold>();
+            if (!instance.GetComponent<SelectableHold>())
+                instance.AddComponent<SelectableHold>();
+
+            // Setup material
+            SetupMaterial(instance);
 
             // Generate preview
             string previewPath = Path.Combine(m_PreviewFolder, fbxModel.name + "_preview.png");
@@ -83,6 +90,49 @@ public class HoldPrefabCreator : EditorWindow
         AssetDatabase.Refresh();
     }
 
+    private void SetupMaterial(GameObject _instance)
+    {
+        var renderers = _instance.GetComponentsInChildren<MeshRenderer>();
+        foreach (var renderer in renderers)
+        {
+            // Create new material using URP/Lit shader
+            Material material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            
+            // Set material properties
+            material.SetFloat("_Surface", 0); // 0 = Opaque, 1 = Transparent
+            material.SetFloat("_Metallic", 0);
+            material.SetFloat("_Smoothness", 0.5f);
+            material.SetFloat("_Cull", 2); // Back face culling
+            material.EnableKeyword("_RECEIVE_SHADOWS_OFF");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.SetOverrideTag("RenderType", "Opaque");
+            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
+            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
+            material.SetInt("_ZWrite", 1); // Enable Z writing
+            material.color = m_HoldColor;
+            
+            // Set much higher render queue to ensure rendering on top
+            material.renderQueue = 3000; // Well above transparent queue
+            
+            // Assign material
+            renderer.material = material;
+            
+            // Try to set layer (make sure you've created this layer in Unity first!)
+            int climbingHoldsLayer = LayerMask.NameToLayer("ClimbingHolds");
+            
+            // Ensure all child objects are also on the ClimbingHolds layer
+            foreach (Transform child in _instance.GetComponentsInChildren<Transform>())
+            {
+                child.gameObject.layer = LayerMask.NameToLayer("ClimbingHolds");
+            }
+            
+            // Save material asset
+            string materialPath = Path.Combine(m_TargetFolder, $"{_instance.name}_material.mat");
+            AssetDatabase.CreateAsset(material, materialPath);
+        }
+    }
+
     private void GeneratePreview(GameObject _target, Camera _camera, string _savePath)
     {
         // Position object and camera
@@ -100,14 +150,14 @@ public class HoldPrefabCreator : EditorWindow
             float maxDim = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
             
             // Adjust camera to frame object more tightly
-            _camera.orthographicSize = maxDim * 0.6f;  // Tighter framing
+            _camera.orthographicSize = maxDim * 0.6f;
             _camera.transform.position = Vector3.down * 10f;
         }
 
         // Create square render texture
         RenderTexture rt = new RenderTexture(m_PreviewSize, m_PreviewSize, 24)
         {
-            antiAliasing = 8  // Add anti-aliasing for cleaner preview
+            antiAliasing = 8
         };
         _camera.targetTexture = rt;
         
@@ -123,6 +173,7 @@ public class HoldPrefabCreator : EditorWindow
         // Save to file
         byte[] bytes = tex.EncodeToPNG();
         File.WriteAllBytes(_savePath, bytes);
+        
         // Cleanup
         RenderTexture.active = null;
         _camera.targetTexture = null;
@@ -140,34 +191,25 @@ public class HoldPrefabCreator : EditorWindow
             importer.mipmapEnabled = false;
             importer.filterMode = FilterMode.Bilinear;
             
-            // Set max size to match preview size
             TextureImporterPlatformSettings platformSettings = new TextureImporterPlatformSettings
             {
                 maxTextureSize = m_PreviewSize,
-                format = TextureImporterFormat.RGBA32,  // Use RGBA32 for better quality
-                textureCompression = TextureImporterCompression.Uncompressed,  // No compression for UI
+                format = TextureImporterFormat.RGBA32,
+                textureCompression = TextureImporterCompression.Uncompressed,
                 crunchedCompression = false
             };
             importer.SetPlatformTextureSettings(platformSettings);
 
-            // Optimize sprite settings for UI
             TextureImporterSettings texSettings = new TextureImporterSettings();
             importer.ReadTextureSettings(texSettings);
             texSettings.spriteMeshType = SpriteMeshType.FullRect;
             texSettings.spriteExtrude = 1;
             texSettings.spritePixelsPerUnit = 100;
-            texSettings.spriteAlignment = (int)SpriteAlignment.Center;  // Center pivot
+            texSettings.spriteAlignment = (int)SpriteAlignment.Center;
             importer.SetTextureSettings(texSettings);
 
-            // Apply and reimport
             EditorUtility.SetDirty(importer);
             importer.SaveAndReimport();
-            
-            Debug.Log($"Successfully imported {_savePath} as Sprite");
-        }
-        else
-        {
-            Debug.LogError($"Failed to set import settings for {_savePath}");
         }
     }
 }

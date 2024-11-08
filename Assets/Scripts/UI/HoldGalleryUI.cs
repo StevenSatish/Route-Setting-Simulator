@@ -151,15 +151,22 @@ public class HoldGalleryUI : MonoBehaviour
         
         if (holdPrefab != null)
         {
+            // Disable bolt hole renderer
+            MeshRenderer boltRenderer = boltHole.GetComponent<MeshRenderer>();
+            if (boltRenderer != null)
+            {
+                boltRenderer.enabled = false;
+            }
+
             float wallZ = boltHole.transform.parent.position.z;
-            float wallThickness = 2f; // Wall thickness
-            float wallFrontZ = wallZ - (wallThickness / 2f); // Calculate front face Z position
+            float wallThickness = 2f;
+            float wallFrontZ = wallZ - (wallThickness / 2f); // Front face of wall
             
             MeshFilter meshFilter = holdPrefab.GetComponentInChildren<MeshFilter>();
             
             if (meshFilter != null)
             {
-                // Get all vertices and find the minimum Z value (will become max after rotation)
+                // Get all vertices and find the minimum Z value
                 Vector3[] vertices = meshFilter.sharedMesh.vertices;
                 float minZ = float.MaxValue;
                 
@@ -171,28 +178,35 @@ public class HoldGalleryUI : MonoBehaviour
                     }
                 }
                 
-                // Account for scale
+                // Account for scale and add offset
                 float scaledZ = minZ * 0.007f;
+                float zOffset = -0.01f; // Additional offset to prevent z-fighting
                 
-                // Create spawn position with the back face exactly at the wall
+                // Create spawn position with the back face in front of the wall
                 Vector3 spawnPosition = new Vector3(
                     boltHole.transform.position.x,
                     boltHole.transform.position.y,
-                    wallFrontZ + scaledZ - 0.01f // Add scaledZ since we're using the minimum Z value
+                    wallFrontZ + scaledZ + zOffset  // Use both scaledZ and offset
                 );
                 
-                Instantiate(holdPrefab, spawnPosition, Quaternion.Euler(0, 180, 0));
-                Debug.Log($"wallZ: {wallZ} | scaledZ: {scaledZ}");
-                Debug.Log($"Spawned hold: {selectedHoldItem.previewName} with back face at Z: {wallZ + scaledZ}");
+                GameObject spawnedHold = Instantiate(holdPrefab, spawnPosition, Quaternion.Euler(0, 180, 0));
+                
+                // Add reference to bolt hole for cleanup
+                ClimbingHold holdComponent = spawnedHold.GetComponent<ClimbingHold>();
+                if (holdComponent != null)
+                {
+                    holdComponent.AssociatedBoltHole = boltHole;
+                }
+                
+                // Ensure the hold is on the correct layer
+                spawnedHold.layer = LayerMask.NameToLayer("ClimbingHolds");
+                foreach (Transform child in spawnedHold.GetComponentsInChildren<Transform>())
+                {
+                    child.gameObject.layer = LayerMask.NameToLayer("ClimbingHolds");
+                }
+                
+                Debug.Log($"Spawned hold at Z: {spawnPosition.z} (Wall front at: {wallFrontZ})");
             }
-            else
-            {
-                Debug.LogError($"No MeshFilter found on hold prefab: {prefabPath}");
-            }
-        }
-        else
-        {
-            Debug.LogError($"Could not find hold prefab at path: {prefabPath}");
         }
     }
     #endregion
@@ -211,8 +225,6 @@ public class HoldGalleryUI : MonoBehaviour
         gameObject.SetActive(true);
         isGalleryVisible = true;
         IsVisible = true;
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
         curBoltHoldName = _curBoltHoldName;
         
         Debug.Log($"current hold name: {curBoltHoldName} | items count: {holdItems.Count}");
@@ -223,8 +235,6 @@ public class HoldGalleryUI : MonoBehaviour
         gameObject.SetActive(false);
         isGalleryVisible = false;
         IsVisible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     public void SelectHoldItem(HoldItemUI _item)
@@ -303,19 +313,6 @@ public class HoldGalleryUI : MonoBehaviour
         {
             SelectHoldItem(holdItems[0]);
         }
-    }
-
-    // Helper method to debug hierarchy
-    private string GetHierarchyPath(GameObject obj)
-    {
-        string path = obj.name;
-        Transform parent = obj.transform.parent;
-        while (parent != null)
-        {
-            path = parent.name + "/" + path;
-            parent = parent.parent;
-        }
-        return path;
     }
     #endregion
 } 

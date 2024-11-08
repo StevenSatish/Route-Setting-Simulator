@@ -5,7 +5,7 @@ public class CrosshairUI : MonoBehaviour
 {
     #region Private Fields
     [SerializeField] private RectTransform m_CrosshairImage;
-    [SerializeField, Range(1f, 100f)] private float m_CrosshairSize = 20f;
+    [SerializeField, Range(1f, 100f)] private float m_CrosshairSize = 10f;
     [SerializeField] private Color m_DefaultColor = Color.white;
     [SerializeField] private Color m_HighlightColor = Color.green;
     

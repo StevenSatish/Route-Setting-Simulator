@@ -11,9 +11,18 @@ public class CameraSelector : MonoBehaviour
     private ISelectable m_CurrentHoveredObject;
     #endregion
 
+    #region Static Fields
+    public static CameraSelector Instance { get; private set; }
+    #endregion
+
     #region Unity Lifecycle
     private void Awake()
     {
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(gameObject);
+
         if (!TryGetComponent(out m_Camera))
         {
             Debug.LogError("CameraSelector requires a Camera component!");
@@ -63,5 +72,9 @@ public class CameraSelector : MonoBehaviour
             }
         }
     }
+    #endregion
+
+    #region Public Properties
+    public ISelectable CurrentHoveredObject => m_CurrentHoveredObject;
     #endregion
 } 

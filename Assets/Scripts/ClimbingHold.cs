@@ -23,4 +23,19 @@ public class ClimbingHold : MonoBehaviour
         // Add any initialization logic here
     }
     #endregion
+
+    public GameObject AssociatedBoltHole { get; set; }
+
+    private void OnDestroy()
+    {
+        // Re-enable bolt hole renderer when hold is destroyed
+        if (AssociatedBoltHole != null)
+        {
+            MeshRenderer boltRenderer = AssociatedBoltHole.GetComponent<MeshRenderer>();
+            if (boltRenderer != null)
+            {
+                boltRenderer.enabled = true;
+            }
+        }
+    }
 } 

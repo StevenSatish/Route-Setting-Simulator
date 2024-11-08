@@ -3,7 +3,7 @@ using UnityEngine;
 public class CameraScript : MonoBehaviour
 {
     #region Private Fields
-    [SerializeField, Range(0.1f, 10f)] private float m_MoveSpeed = 5f;
+    [SerializeField, Range(0.1f, 10f)] private float m_MoveSpeed = 6.5f;
     [SerializeField, Range(1f, 10f)] private float m_LookSensitivity = 2f;
     [SerializeField] private Rigidbody m_Rigidbody;
     [SerializeField] private float m_CollisionRadius = 0.5f; // Radius for collision detection
