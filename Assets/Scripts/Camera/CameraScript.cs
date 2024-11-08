@@ -10,7 +10,6 @@ public class CameraScript : MonoBehaviour
     
     private float m_RotationX = 0f;
     private float m_RotationY = 0f;
-    private Vector3 m_Velocity = Vector3.zero;
     #endregion
 
     #region Unity Lifecycle
@@ -44,6 +43,14 @@ public class CameraScript : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Tab) && ControlPanelUI.Instance != null)
+        {
+            ControlPanelUI.Instance.ToggleVisibility();
+        } else if (Input.GetKeyDown(KeyCode.Escape) && ControlPanelUI.Instance != null)
+        {
+            ControlPanelUI.Instance.Hide();
+        }
+
         if (!HoldGalleryUI.IsVisible)
         {
             HandleRotation();

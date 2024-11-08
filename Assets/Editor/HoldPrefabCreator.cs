@@ -98,38 +98,49 @@ public class HoldPrefabCreator : EditorWindow
             // Create new material using URP/Lit shader
             Material material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             
-            // Set material properties
-            material.SetFloat("_Surface", 0); // 0 = Opaque, 1 = Transparent
+            // Set material properties for complete opacity
+            material.SetFloat("_Surface", 0); // Opaque
             material.SetFloat("_Metallic", 0);
             material.SetFloat("_Smoothness", 0.5f);
             material.SetFloat("_Cull", 2); // Back face culling
-            material.EnableKeyword("_RECEIVE_SHADOWS_OFF");
+            material.SetFloat("_AlphaClip", 0); // Disable alpha clipping
+            material.SetFloat("_Blend", 0); // Normal blend mode
+            
+            // Ensure opacity
+            material.SetFloat("_ZWrite", 1);
+            material.SetFloat("_DstBlend", 0);
+            material.SetFloat("_SrcBlend", 1);
+            
+            // Disable all transparency-related keywords
             material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
             material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.SetOverrideTag("RenderType", "Opaque");
-            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
-            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.Zero);
-            material.SetInt("_ZWrite", 1); // Enable Z writing
-            material.color = m_HoldColor;
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.DisableKeyword("_ALPHABLEND_ON");
             
-            // Set much higher render queue to ensure rendering on top
-            material.renderQueue = 3000; // Well above transparent queue
+            // Enable opaque-related keywords
+            material.EnableKeyword("_OPAQUE_ON");
+            
+            // Set color with full alpha
+            Color opaqueColor = m_HoldColor;
+            opaqueColor.a = 1f;
+            material.color = opaqueColor;
+            
+            // Set rendering properties
+            material.SetOverrideTag("RenderType", "Opaque");
+            material.renderQueue = 2000; // Use opaque queue instead of transparent
             
             // Assign material
             renderer.material = material;
             
-            // Try to set layer (make sure you've created this layer in Unity first!)
-            int climbingHoldsLayer = LayerMask.NameToLayer("ClimbingHolds");
-            
-            // Ensure all child objects are also on the ClimbingHolds layer
-            foreach (Transform child in _instance.GetComponentsInChildren<Transform>())
-            {
-                child.gameObject.layer = LayerMask.NameToLayer("ClimbingHolds");
-            }
-            
             // Save material asset
             string materialPath = Path.Combine(m_TargetFolder, $"{_instance.name}_material.mat");
             AssetDatabase.CreateAsset(material, materialPath);
+        }
+        
+        // Set layer (unchanged)
+        foreach (Transform child in _instance.GetComponentsInChildren<Transform>())
+        {
+            child.gameObject.layer = LayerMask.NameToLayer("ClimbingHolds");
         }
     }
 

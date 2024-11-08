@@ -140,4 +140,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SmoothSpeed: 10
-  m_RotationMultiplier: 3
+  m_RotationMultiplier: 8

@@ -10,7 +10,7 @@ public class SelectableHold : MonoBehaviour, ISelectable
     private Vector3 m_CurrentRotation;
     private Vector3 m_TargetRotation;
     [SerializeField, Range(0.1f, 20f)] private float m_SmoothSpeed = 10f;
-    [SerializeField] private float m_RotationMultiplier = 6f;
+    [SerializeField] private float m_RotationMultiplier = 8f;
     private float m_LastCameraXRotation;
     private Camera m_MainCamera;
 
@@ -52,7 +52,16 @@ public class SelectableHold : MonoBehaviour, ISelectable
 
     public void OnSelect()
     {
-        // Not used for deletion functionality
+        // Get the associated bolt hole from the ClimbingHold component
+        ClimbingHold climbingHold = GetComponent<ClimbingHold>();
+        if (climbingHold?.AssociatedBoltHole != null)
+        {
+            // Show the gallery UI with the associated bolt hole's name
+            HoldGalleryUI.Instance.Show(climbingHold.AssociatedBoltHole.name);
+            
+            // Delete the current hold
+            DeleteHold();
+        }
     }
 
     private void Update()
