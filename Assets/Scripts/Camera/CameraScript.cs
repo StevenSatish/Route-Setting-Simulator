@@ -79,8 +79,18 @@ public class CameraScript : MonoBehaviour
     {
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
+        
+        // Add vertical movement for Space and Ctrl
+        float upDownInput = 0f;
+        if (Input.GetKey(KeyCode.Space))
+            upDownInput += 1f;
+        if (Input.GetKey(KeyCode.LeftShift))
+            upDownInput -= 1f;
 
-        Vector3 movement = transform.right * horizontalInput + transform.forward * verticalInput;
+        // Combine all movement directions
+        Vector3 movement = transform.right * horizontalInput + 
+                          transform.forward * verticalInput + 
+                          Vector3.up * upDownInput;
         
         // Normalize movement vector
         if (movement.magnitude > 1f)
@@ -107,8 +117,10 @@ public class CameraScript : MonoBehaviour
             m_Rigidbody.MovePosition(hit.point + hit.normal * m_CollisionRadius);
         }
 
-        // Reset velocity when not moving
-        if (Mathf.Approximately(horizontalInput, 0f) && Mathf.Approximately(verticalInput, 0f))
+        // Update velocity reset check to include upDownInput
+        if (Mathf.Approximately(horizontalInput, 0f) && 
+            Mathf.Approximately(verticalInput, 0f) && 
+            Mathf.Approximately(upDownInput, 0f))
         {
             m_Rigidbody.linearVelocity = Vector3.zero;
         }
