@@ -5,7 +5,7 @@ public class CameraScript : MonoBehaviour
     #region Private Fields
     [SerializeField, Range(0.1f, 10f)] private float m_MoveSpeed = 6.5f;
     [SerializeField, Range(1f, 10f)] private float m_LookSensitivity = 2f;
-    [SerializeField, Range(0.1f, 1f)] private float m_WebGLSensitivityMultiplier = 0.5f;
+    [SerializeField, Range(0.1f, 1f)] private float m_WebGLSensitivityMultiplier = 0.1f;
     [SerializeField] private Rigidbody m_Rigidbody;
     [SerializeField] private float m_CollisionRadius = 0.5f; // Radius for collision detection
     
@@ -129,13 +129,13 @@ public class CameraScript : MonoBehaviour
 
     private void HandleRotation()
     {
-        float sensitivityMultiplier = 1f;
-        #if UNITY_WEBGL && !UNITY_EDITOR
-            sensitivityMultiplier = m_WebGLSensitivityMultiplier;
-        #endif
+        float mouseX = Input.GetAxis("Mouse X") * m_LookSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * m_LookSensitivity;
 
-        float mouseX = Input.GetAxis("Mouse X") * m_LookSensitivity * sensitivityMultiplier;
-        float mouseY = Input.GetAxis("Mouse Y") * m_LookSensitivity * sensitivityMultiplier;
+        #if UNITY_WEBGL && !UNITY_EDITOR
+            mouseX *= m_WebGLSensitivityMultiplier;
+            mouseY *= m_WebGLSensitivityMultiplier;
+        #endif
 
         m_RotationY += mouseX;
         m_RotationX -= mouseY;
