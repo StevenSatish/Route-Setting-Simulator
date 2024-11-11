@@ -4,7 +4,7 @@ public class CameraScript : MonoBehaviour
 {
     #region Private Fields
     [SerializeField, Range(0.1f, 10f)] private float m_MoveSpeed = 6.5f;
-    [SerializeField, Range(1f, 10f)] private float m_LookSensitivity = 2f;
+    [SerializeField, Range(5f, 20f)] private float m_LookSensitivity = 8f;
     [SerializeField] private Rigidbody m_Rigidbody;
     [SerializeField] private float m_CollisionRadius = 0.5f; // Radius for collision detection
     
@@ -128,8 +128,9 @@ public class CameraScript : MonoBehaviour
 
     private void HandleRotation()
     {
-        float mouseX = Input.GetAxis("Mouse X") * m_LookSensitivity;
-        float mouseY = Input.GetAxis("Mouse Y") * m_LookSensitivity;
+        // Use delta time to make movement more consistent across platforms
+        float mouseX = Input.GetAxisRaw("Mouse X") * m_LookSensitivity * Time.deltaTime * 60f;
+        float mouseY = Input.GetAxisRaw("Mouse Y") * m_LookSensitivity * Time.deltaTime * 60f;
 
         m_RotationY += mouseX;
         m_RotationX -= mouseY;
