@@ -2,9 +2,12 @@
 
 A 3D climbing wall route setting application built with Unity.
 
-## Download and Play
+# Play
+## 🌐 [Use the Browser Version!](https://stevensatish.itch.io/route-setting-simulator)
+---
+## Or download locally! (Windows only)
 1. Go to the [Releases](https://github.com/StevenSatish/Route-Setting-Simulator/releases) page
-2. Download the latest version for your platform
+2. Download the latest Release
 3. Extract the zip file
 4. Run RouteSettingSimulator.exe
 
