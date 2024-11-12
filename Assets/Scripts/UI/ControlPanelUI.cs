@@ -4,7 +4,7 @@ public class ControlPanelUI : MonoBehaviour
 {
     #region Private Fields
     public static ControlPanelUI Instance { get; private set; }
-    private bool m_IsVisible = true;
+    public bool m_IsVisible = true;
     [SerializeField] private GameObject m_ControlPanel; // Reference to the panel containing controls
     [SerializeField] private GameObject m_ReminderText; // Reference to the separate reminder text
     #endregion

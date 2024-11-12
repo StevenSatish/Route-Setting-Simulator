@@ -5,19 +5,19 @@ public class CameraScript : MonoBehaviour
     #region Private Fields
     [SerializeField, Range(0.1f, 10f)] private float m_MoveSpeed = 6.5f;
     [SerializeField, Range(1f, 10f)] private float m_LookSensitivity = 2f;
-    [SerializeField, Range(0.1f, 1f)] private float m_WebGLSensitivityMultiplier = 0.1f;
+    [SerializeField, Range(0.1f, 1f)] private float m_WebGLSensitivityMultiplier = 0.25f;
     [SerializeField] private Rigidbody m_Rigidbody;
     [SerializeField] private float m_CollisionRadius = 0.5f; // Radius for collision detection
     
     private float m_RotationX = 0f;
     private float m_RotationY = 0f;
+    private bool m_IsPointerLocked = false;
     #endregion
 
     #region Unity Lifecycle
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        LockCursor();
     
         if (!TryGetComponent(out m_Rigidbody))
         {
@@ -44,15 +44,43 @@ public class CameraScript : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Tab) && ControlPanelUI.Instance != null)
+        // Handle pointer lock state
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
-            ControlPanelUI.Instance.ToggleVisibility();
-        } else if (Input.GetKeyDown(KeyCode.Escape) && ControlPanelUI.Instance != null)
+            if (m_IsPointerLocked)
+            {
+                UnlockCursor();
+            }
+            
+            // Hide control panel if it's visible
+            if (ControlPanelUI.Instance != null && ControlPanelUI.Instance.m_IsVisible)
+            {
+                ControlPanelUI.Instance.Hide();
+            }
+        }
+        else if (Input.GetMouseButtonDown(0) && !m_IsPointerLocked) // Left click
         {
-            ControlPanelUI.Instance.Hide();
+            LockCursor();
         }
 
-        if (!HoldGalleryUI.IsVisible)
+        // Toggle control panel with Tab
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            if (ControlPanelUI.Instance != null)
+            {
+                ControlPanelUI.Instance.ToggleVisibility();
+            }
+        }
+        if (Input.GetMouseButtonDown(1))
+        {
+            if (ControlPanelUI.Instance != null)
+            {
+                ControlPanelUI.Instance.Hide();
+            }
+        }
+
+        // Only handle rotation when pointer is locked
+        if (m_IsPointerLocked && !HoldGalleryUI.IsVisible)
         {
             HandleRotation();
         }
@@ -142,6 +170,20 @@ public class CameraScript : MonoBehaviour
         m_RotationX = Mathf.Clamp(m_RotationX, -90f, 90f);
 
         transform.localRotation = Quaternion.Euler(m_RotationX, m_RotationY, 0f);
+    }
+
+    private void LockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        m_IsPointerLocked = true;
+    }
+
+    private void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        m_IsPointerLocked = false;
     }
     #endregion
 

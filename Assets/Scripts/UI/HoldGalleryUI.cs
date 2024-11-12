@@ -52,7 +52,7 @@ public class HoldGalleryUI : MonoBehaviour
     {
         if (!isGalleryVisible) return;
 
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetMouseButtonDown(1))
         {
             Hide();
             return;
